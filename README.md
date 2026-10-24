@@ -1,0 +1,1 @@
+# mcd-party-skill
