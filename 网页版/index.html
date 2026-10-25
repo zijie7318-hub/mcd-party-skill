@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麦门聚餐管家 · 在线试玩</title>
+<style>
+  :root{
+    --mcd-red:#DA291C;
+    --mcd-yellow:#FFC72C;
+    --bg:#FFF8F0;
+    --card:#FFFFFF;
+    --muted:#8A8577;
+    --green:#1E9E5A;
+    --text:#27251F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+  header{text-align:center;margin-bottom:24px;}
+  .logo{
+    display:inline-block;background:var(--mcd-red);color:#fff;font-weight:700;
+    font-size:20px;padding:10px 24px;border-radius:999px;box-shadow:0 4px 0 rgba(0,0,0,.12);
+  }
+  h1{font-size:26px;margin:16px 0 6px;}
+  .sub{color:var(--muted);font-size:14px;}
+
+  .control{
+    background:var(--card);border-radius:16px;padding:20px 24px;
+    box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:20px;
+  }
+  .modebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .modebar-label{font-size:13px;color:var(--muted);font-weight:500;}
+  .mode-switch{display:inline-flex;background:#F2EEE4;border-radius:999px;padding:3px;gap:2px;}
+  .mode-switch button{
+    border:none;background:transparent;font-size:13px;font-weight:600;color:var(--muted);
+    padding:6px 18px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  .mode-switch button.active{background:#fff;color:var(--mcd-red);box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .mode-switch.real button.active{background:var(--green);color:#fff;}
+  .mode-hint{font-size:12px;color:var(--muted);}
+
+  .row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;margin-bottom:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;}
+  .field label{font-size:13px;color:var(--muted);font-weight:500;}
+  select,input[type=number],input[type=range],input[type=text]{
+    font-size:15px;padding:10px 12px;border:1px solid #E4DED2;border-radius:8px;background:#fff;width:100%;
+  }
+  .keyword-field,.token-field{display:none;}
+  body.mode-real .keyword-field,body.mode-real .token-field{display:flex;}
+  .budget-val{font-weight:700;color:var(--mcd-red);font-size:16px;}
+  .btn{
+    background:var(--mcd-red);color:#fff;border:none;border-radius:12px;
+    font-size:17px;font-weight:700;padding:14px 28px;cursor:pointer;
+    width:100%;box-shadow:0 4px 0 #A31D12;transition:.1s;
+  }
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #A31D12;}
+  .btn:disabled{opacity:.6;cursor:not-allowed;}
+
+  .steps{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px;}
+  .step{
+    font-size:12px;color:var(--muted);background:#F2EEE4;border-radius:999px;
+    padding:5px 12px;display:flex;align-items:center;gap:6px;transition:.2s;
+  }
+  .step.doing{background:#FFF3D6;color:#8A6D1A;font-weight:600;}
+  .step.done{background:#E7F6EC;color:var(--green);}
+  .step.fail{background:#FDE8E8;color:var(--mcd-red);font-weight:600;}
+
+  .storebar{
+    background:var(--mcd-yellow);border-radius:12px;padding:12px 18px;margin-bottom:20px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  }
+  .storebar .name{font-weight:700;}
+  .storebar .addr{font-size:13px;color:#5A5240;}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:720px){.cards{grid-template-columns:1fr;}}
+  .card{
+    background:var(--card);border-radius:16px;padding:20px;
+    box-shadow:0 2px 12px rgba(0,0,0,.05);border-top:5px solid var(--mcd-yellow);
+    animation:pop .35s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .card.econ{border-top-color:#A8C256;}
+  .card.bal{border-top-color:var(--mcd-yellow);}
+  .card.rich{border-top-color:var(--mcd-red);}
+  .tier{font-size:15px;font-weight:700;margin-bottom:10px;}
+  .total{font-size:28px;font-weight:700;color:var(--mcd-red);}
+  .per{font-size:13px;color:var(--muted);margin-bottom:12px;}
+  .badge{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:12px;}
+  .badge.ok{background:#E7F6EC;color:var(--green);}
+  .badge.over{background:#FDE8E8;color:var(--mcd-red);}
+  .saved{font-size:13px;font-weight:700;color:var(--green);margin:0 0 8px;}
+  .coupon-line{font-size:12px;color:var(--green);margin-bottom:10px;}
+  .items li .tag{font-size:11px;color:var(--green);}
+  .items{list-style:none;font-size:14px;}
+  .items li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #F0EBE0;}
+  .items li span:last-child{color:var(--muted);}
+
+  .realnote{
+    margin-top:20px;background:#F6F2E8;border-radius:12px;padding:12px 16px;font-size:13px;color:#5F5E5A;
+  }
+  .realnote b{color:#8A6D1A;}
+  .realnote code{background:#EDE7D8;border-radius:4px;padding:1px 6px;font-size:12px;}
+
+  footer{text-align:center;margin-top:28px;color:var(--muted);font-size:12px;}
+  .tip{display:inline-block;background:#F2EEE4;border-radius:8px;padding:8px 14px;}
+
+  .llmbar{border-top:1px dashed #E4DED2;margin-top:16px;padding-top:14px;display:flex;flex-direction:column;gap:10px;}
+  .llm-toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#5F5E5A;cursor:pointer;user-select:none;}
+  .llm-toggle input{width:16px;height:16px;accent-color:var(--green);}
+  .llm-config{display:none;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .llmbar.on .llm-config{display:flex;}
+  .llm-config .field{flex:1;min-width:160px;}
+  .llm-config input,.llm-config select{font-size:14px;padding:9px 11px;border:1px solid #E4DED2;border-radius:8px;background:#fff;width:100%;}
+  .custom-llm{display:none;gap:10px;flex:2;}
+  .llmbar.custom .custom-llm{display:flex;}
+
+  .aireview{
+    margin-top:20px;background:#EEF7F1;border:1px solid #CBE6D6;border-radius:12px;
+    padding:14px 16px;font-size:13px;color:#2F4B3A;
+  }
+  .aireview .ai-head{font-weight:700;font-size:14px;margin-bottom:8px;color:#1E6B41;}
+  .aireview .ai-summary{margin-bottom:8px;}
+  .aireview .ai-sug{list-style:none;}
+  .aireview .ai-sug li{padding:5px 0;border-bottom:1px dashed #D5E8DC;}
+  .aireview .ai-sug b{color:#1E6B41;}
+  .aireview .ai-why{color:#6B7A70;font-size:12px;}
+  .aireview .ai-overall{margin-top:10px;padding:8px 10px;background:#fff;border-radius:8px;font-weight:600;color:#1E6B41;}
+  .aireview .ai-note{margin-top:8px;color:#8A9A8F;font-size:12px;}
+  .aireview .ai-err{color:var(--mcd-red);}
+  .ai-loading{color:#6B7A70;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">麦门聚餐管家</div>
+    <h1>多人聚餐，一键理清怎么点</h1>
+    <p class="sub">输入人数和预算，点「生成方案」，看它一步步算给你 · 免登录试玩</p>
+  </header>
+
+  <div class="control">
+    <div class="modebar">
+      <span class="modebar-label">模式</span>
+      <div class="mode-switch" id="modeSwitch">
+        <button type="button" data-mode="demo" class="active">演示</button>
+        <button type="button" data-mode="real">真实</button>
+      </div>
+      <span class="mode-hint" id="modeHint"></span>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>城市</label>
+        <input type="text" id="cityInput" list="cityList" value="上海" placeholder="任意城市，如：西安" autocomplete="off">
+        <datalist id="cityList">
+          <option value="上海"></option>
+          <option value="北京"></option>
+          <option value="深圳"></option>
+          <option value="广州"></option>
+          <option value="杭州"></option>
+          <option value="西安"></option>
+          <option value="成都"></option>
+        </datalist>
+      </div>
+      <div class="field keyword-field" id="keywordField">
+        <label>关键词（地标/路名）</label>
+        <input type="text" id="keyword" value="人民广场" placeholder="如：人民广场">
+      </div>
+      <div class="field token-field" id="tokenField">
+        <label>你的 MCP Token</label>
+        <input type="password" id="tokenInput" placeholder="open.mcd.cn/mcp 激活获取" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>几个人</label>
+        <input type="number" id="people" value="4" min="1" max="20">
+      </div>
+      <div class="field">
+        <label>预算（元）：<span class="budget-val" id="budgetVal">120</span></label>
+        <input type="range" id="budget" min="20" max="500" step="5" value="120">
+      </div>
+    </div>
+    <div class="llmbar" id="llmbar">
+      <label class="llm-toggle">
+        <input type="checkbox" id="llmToggle"> AI 二次校验（可选：用你自己的大模型给方案再把把关，让推荐更省更合理）
+      </label>
+      <div class="llm-config">
+        <div class="field">
+          <label>大模型</label>
+          <select id="llmModelSel"></select>
+        </div>
+        <div class="custom-llm" id="customLlm">
+          <div class="field">
+            <label>base_url</label>
+            <input type="text" id="llmBase" placeholder="https://api.deepseek.com/v1" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>模型名</label>
+            <input type="text" id="llmModelName" placeholder="deepseek-chat" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label>大模型 API Key</label>
+          <input type="password" id="llmKey" placeholder="sk-..." autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <button class="btn" id="genBtn">🍔 生成聚餐方案</button>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <div class="storebar" id="storebar"></div>
+  <div class="cards" id="cards"></div>
+  <div class="realnote" id="realnote"></div>
+  <div class="aireview" id="aireview"></div>
+
+  <footer>
+    <div class="tip">演示数据，非实时价格，正式版价格以麦当劳官方实时结果为准</div>
+  </footer>
+</div>
+
+<script>
+  // ===== 后端地址配置（真实模式）=====
+  // 默认已指向公网后端（WorkBuddy 发布），打开网页填上自己的 Token 即可用
+  // 想换本地后端：用 ?api=http://localhost:5000 临时覆盖
+  const DEFAULT_API_BASE = 'https://mcd-party-api.app.workbuddy.host';
+  const DEFAULT_SHARE_CODE = '7TQHXLMZKJ';
+  const qs = new URLSearchParams(location.search);
+  const API_BASE = qs.get('api') || localStorage.getItem('mcd_api_base') || DEFAULT_API_BASE;
+  const SHARE_CODE = qs.get('sharecode') || localStorage.getItem('mcd_sharecode') || DEFAULT_SHARE_CODE;
+
+  // 统一拼接口 URL：自动带上分享码参数（本地后端会忽略它，无副作用）
+  function apiUrl(path, params) {
+    let u = API_BASE.replace(/\/+$/, '') + path + '?';
+    if (SHARE_CODE) u += 'sharecode=' + encodeURIComponent(SHARE_CODE) + '&';
+    return u + (params || '');
+  }
+
+  const cityInput = document.getElementById('cityInput');
+  const peopleInput = document.getElementById('people');
+  const budget = document.getElementById('budget');
+  const budgetVal = document.getElementById('budgetVal');
+  const genBtn = document.getElementById('genBtn');
+  const stepsEl = document.getElementById('steps');
+  const storebar = document.getElementById('storebar');
+  const cardsEl = document.getElementById('cards');
+  const realnote = document.getElementById('realnote');
+  const keywordInput = document.getElementById('keyword');
+  const tokenInput = document.getElementById('tokenInput');
+  const modeSwitch = document.getElementById('modeSwitch');
+  const modeHint = document.getElementById('modeHint');
+  const footerTip = document.querySelector('footer .tip');
+  const llmbar = document.getElementById('llmbar');
+  const llmToggle = document.getElementById('llmToggle');
+  const llmModelSel = document.getElementById('llmModelSel');
+  const llmKey = document.getElementById('llmKey');
+  const llmBase = document.getElementById('llmBase');
+  const llmModelName = document.getElementById('llmModelName');
+  const aireviewEl = document.getElementById('aireview');
+
+  // Token 记忆：优先读上次填的，改了就存 localStorage（仅本机，不随代码/仓库走）
+  tokenInput.value = localStorage.getItem('mcd_token') || '';
+  tokenInput.oninput = () => localStorage.setItem('mcd_token', tokenInput.value.trim());
+
+  // ===== 大模型二次校验（BYOK：用户自选模型 + 自己的 API Key，仅本机保存）=====
+  const LLM_PRESETS = [
+    { id: 'deepseek', label: 'DeepSeek（推荐，便宜）', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+    { id: 'openai', label: 'OpenAI GPT', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+    { id: 'zhipu', label: '智谱 GLM（有免费档）', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+    { id: 'moonshot', label: 'Moonshot Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+    { id: 'qwen', label: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
+    { id: 'custom', label: '自定义（填 base_url + 模型名）', baseUrl: '', model: '' }
+  ];
+  LLM_PRESETS.forEach(p => {
+    const o = document.createElement('option'); o.value = p.id; o.textContent = p.label; llmModelSel.appendChild(o);
+  });
+  llmToggle.checked = localStorage.getItem('llm_enabled') === '1';
+  llmModelSel.value = localStorage.getItem('llm_model') || 'deepseek';
+  llmKey.value = localStorage.getItem('llm_key') || '';
+  llmBase.value = localStorage.getItem('llm_base') || '';
+  llmModelName.value = localStorage.getItem('llm_modelname') || '';
+  function syncLlm(){
+    llmbar.classList.toggle('on', llmToggle.checked);
+    llmbar.classList.toggle('custom', llmModelSel.value === 'custom');
+  }
+  llmToggle.onchange = () => { localStorage.setItem('llm_enabled', llmToggle.checked ? '1' : '0'); syncLlm(); };
+  llmModelSel.onchange = () => { localStorage.setItem('llm_model', llmModelSel.value); syncLlm(); };
+  llmKey.oninput = () => localStorage.setItem('llm_key', llmKey.value.trim());
+  llmBase.oninput = () => localStorage.setItem('llm_base', llmBase.value.trim());
+  llmModelName.oninput = () => localStorage.setItem('llm_modelname', llmModelName.value.trim());
+  syncLlm();
+
+  // 当前模式：demo=演示（假数据+模拟动画）/ real=真实（fetch 后端），刷新后保持
+  let mode = localStorage.getItem('mcd_mode') === 'real' ? 'real' : 'demo';
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  // 每座城市对应一家门店（演示用）；未列出的城市给通用演示门店
+  const CITY_STORES = {
+    '上海': { name: '麦当劳上海黄浦华旭国际大厦餐厅', address: '南京东路街道西藏中路336号' },
+    '北京': { name: '麦当劳（王府井店）', address: '北京市东城区王府井大街138号' },
+    '深圳': { name: '麦当劳（华强北店）', address: '深圳市福田区华强北路1002号' },
+    '广州': { name: '麦当劳（天河城店）', address: '广州市天河区天河路208号' },
+    '杭州': { name: '麦当劳（湖滨店）', address: '杭州市上城区延安路255号' }
+  };
+  // 城市自由输入：记住上次填的，输入变化时刷新演示门店
+  cityInput.value = localStorage.getItem('mcd_city') || '上海';
+  cityInput.oninput = () => {
+    localStorage.setItem('mcd_city', cityInput.value.trim());
+    showStore();
+  };
+
+  // 内置菜单素材池（真实套餐项 + 合理单价，用于演示规则生成）
+  const MENU = {
+    econ: { name: '大堡口福三件套', price: 25.5 },      // 单人完整餐
+    bal:  { name: '板烧鸡腿堡三件套', price: 34.0 },
+    rich: { name: '培根安格斯厚牛堡三件套', price: 40.0 },
+    side: { name: '麦乐鸡4块', price: 11.5 },
+    coffee: { name: '美式中杯', price: 13.3, origin: 19.0 }  // 演示：券后价商品
+  };
+
+  function fmt(n){ return '¥' + n.toFixed(2); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function showStore(st){
+    if (!st) {
+      const c = (cityInput.value || '').trim() || '上海';
+      st = CITY_STORES[c] || { name: '麦当劳（' + c + '·演示门店）', address: c + '市区（演示数据）' };
+    }
+    const extra = st.distance ? ' · ' + st.distance : '';
+    storebar.innerHTML = '<span class="name">' + esc(st.name) + '</span>'
+      + '<span class="addr">' + esc(st.address || '') + extra + '</span>';
+  }
+
+  // ===== 模式切换 =====
+  function setMode(m){
+    mode = m;
+    localStorage.setItem('mcd_mode', m);
+    modeSwitch.querySelectorAll('button').forEach(b =>
+      b.classList.toggle('active', b.dataset.mode === m));
+    modeSwitch.classList.toggle('real', m === 'real');
+    document.body.classList.toggle('mode-real', m === 'real');
+    modeHint.textContent = m === 'real'
+      ? '真实模式：调用后端 ' + API_BASE + '（门店/菜单/核价均为真实数据）'
+      : '演示模式：内置假数据 + 模拟动画，无需后端';
+    footerTip.textContent = m === 'real'
+      ? '真实模式：价格来自后端官方核价（calculate-price）'
+      : '演示数据，非实时价格，正式版价格以麦当劳官方实时结果为准';
+  }
+  modeSwitch.querySelectorAll('button').forEach(b =>
+    b.onclick = () => setMode(b.dataset.mode));
+
+  // 规则生成三套方案（演示用：三档单人套餐 × 人数 + 模拟一张「中杯美式7折」券）
+  function generatePlans(N, budget){
+    function combo(pairs){ // pairs: [{item, qty, viaCoupon?}]
+      let total = 0, list = [];
+      pairs.forEach(({item, qty, viaCoupon}) => {
+        total += item.price * qty;
+        list.push({ name: item.name, qty: qty, price: item.price, viaCoupon: !!viaCoupon });
+      });
+      return { total: Math.round(total * 100) / 100, items: list };
+    }
+    const econ = combo([{item: MENU.econ, qty: N}, {item: MENU.coffee, qty: 1, viaCoupon: true}]);
+    const bal  = combo([{item: MENU.bal, qty: N}, {item: MENU.coffee, qty: 1, viaCoupon: true}]);
+    const rich = combo([{item: MENU.rich, qty: N}, {item: MENU.side, qty: N}]);
+    const SAVED = Math.round((MENU.coffee.origin - MENU.coffee.price) * 100) / 100;
+    return [
+      { tier: '经济型', total: econ.total, items: econ.items, saved: SAVED,
+        coupon: { title: '新人专享-中杯美式7折', item: '美式中杯', before: MENU.coffee.origin, after: MENU.coffee.price } },
+      { tier: '均衡型', total: bal.total, items: bal.items, saved: SAVED,
+        coupon: { title: '新人专享-中杯美式7折', item: '美式中杯', before: MENU.coffee.origin, after: MENU.coffee.price } },
+      { tier: '丰盛型', total: rich.total, items: rich.items, saved: 0, coupon: null }
+    ].map(p => ({
+      tier: p.tier,
+      total: p.total,
+      per_person: Math.round(p.total / N * 100) / 100,
+      over_budget: p.total > budget,
+      saved: p.saved,
+      coupon: p.coupon,
+      items: p.items
+    }));
+  }
+
+  // 三张卡片渲染（演示/真实共用；真实模式 items 无单价，右侧列留空）
+  function renderCards(plans, N, budget){
+    cardsEl.innerHTML = '';
+    plans.forEach(p => {
+      const cls = p.tier === '经济型' ? 'econ' : (p.tier === '均衡型' ? 'bal' : 'rich');
+      const over = p.over_budget != null ? p.over_budget : p.total > budget;
+      const badge = over ? '<span class="badge over">超出预算</span>' : '<span class="badge ok">预算内</span>';
+      const savedHtml = (p.saved && p.saved > 0)
+        ? '<div class="saved">已省 ' + fmt(p.saved) + '</div>' : '';
+      let couponLine = '';
+      if (p.coupon) {
+        const b = p.coupon.before, a = p.coupon.after;
+        couponLine = '<div class="coupon-line">优惠：' + esc(p.coupon.title)
+          + (b != null && a != null ? '（' + esc(p.coupon.item) + ' ¥' + b.toFixed(2) + ' → ¥' + a.toFixed(2) + '）' : '')
+          + '</div>';
+      }
+      const items = p.items.map(i =>
+        '<li><span>' + esc(i.name) + ' ×' + i.qty + (i.viaCoupon ? ' <span class="tag">券后价</span>' : '') + '</span>'
+        + '<span>' + (i.price != null ? fmt(i.price * i.qty) : '') + '</span></li>'
+      ).join('');
+      cardsEl.insertAdjacentHTML('beforeend',
+        '<div class="card ' + cls + '">'
+        + '<div class="tier">' + p.tier + '</div>'
+        + '<div class="total">' + fmt(p.total) + '</div>'
+        + '<div class="per">人均 ' + fmt(p.per_person) + '</div>'
+        + badge
+        + savedHtml
+        + couponLine
+        + '<ul class="items">' + items + '</ul>'
+        + '</div>'
+      );
+    });
+  }
+
+  // ===== 调用链动画 =====
+  const STEPS = [
+    { tool: 'query-nearby-stores', label: '查附近门店' },
+    { tool: 'query-meals', label: '拉取实时菜单' },
+    { tool: 'query-coupons', label: '查询可叠优惠' },
+    { tool: 'calculate-price', label: '官方整单核价' },
+    { tool: '组装方案', label: '生成三套方案' }
+  ];
+  function buildSteps(){
+    stepsEl.innerHTML = '';
+    STEPS.forEach(s => {
+      const el = document.createElement('span');
+      el.className = 'step'; el.textContent = s.label;
+      stepsEl.appendChild(el);
+    });
+  }
+  function setStep(i, state){
+    const el = stepsEl.children[i]; if (!el) return;
+    el.classList.remove('doing', 'done', 'fail');
+    if (state === 'doing') el.classList.add('doing');
+    if (state === 'done'){ el.classList.add('done'); el.textContent = '✓ ' + STEPS[i].label; }
+    if (state === 'fail'){ el.classList.add('fail'); el.textContent = '✗ ' + STEPS[i].label; }
+  }
+  // 演示模式：按时间轴模拟整条链路
+  function animateSteps(done){
+    buildSteps();
+    STEPS.forEach((s, i) => {
+      const el = stepsEl.children[i];
+      setTimeout(() => {
+        el.classList.add('doing');
+        setTimeout(() => {
+          el.classList.remove('doing'); el.classList.add('done');
+          el.textContent = '✓ ' + s.label;
+          if (i === STEPS.length - 1) done();
+        }, 450);
+      }, i * 550);
+    });
+  }
+
+  // ===== 演示模式 =====
+  function runDemo(){
+    const N = Math.max(1, parseInt(peopleInput.value) || 4);
+    const B = parseInt(budget.value);
+    genBtn.disabled = true;
+    showStore();
+    cardsEl.innerHTML = '';
+    aireviewEl.innerHTML = '';
+    animateSteps(() => {
+      const plans = generatePlans(N, B);
+      renderCards(plans, N, B);
+      realnote.innerHTML = '<b>演示模式</b>：三套方案按内置菜单规则生成，并模拟叠加一张「新人专享-中杯美式7折」券（美式中杯 ¥19.0 → ¥13.3，省 5.7 元）。真实模式会真查门店券/卡包券，逐张试算取最省。价格非实时，正式版以麦当劳官方实时接口为准。';
+      genBtn.disabled = false;
+    });
+  }
+
+  // ===== 真实模式：真实 fetch 后端 =====
+  async function runReal(){
+    const token = tokenInput.value.trim();
+    if (!token) {
+      alert('请先在「你的 MCP Token」输入框粘贴你的 Token（open.mcd.cn/mcp 激活获取）');
+      return;
+    }
+    const HEADERS = { 'X-MCD-Token': token };
+    const N = Math.max(1, parseInt(peopleInput.value) || 4);
+    const B = parseInt(budget.value);
+    const city = (cityInput.value || '').trim();
+    const keyword = (keywordInput.value || '').trim() || '人民广场';
+    genBtn.disabled = true;
+    cardsEl.innerHTML = '';
+    aireviewEl.innerHTML = '';
+    buildSteps();
+    try {
+      // ① 查门店（真实 fetch）
+      setStep(0, 'doing');
+      const r1 = await fetch(apiUrl('/api/stores', 'city=' + encodeURIComponent(city)
+                            + '&keyword=' + encodeURIComponent(keyword)), { headers: HEADERS });
+      if (!r1.ok) {
+        let msg = 'GET /api/stores → HTTP ' + r1.status;
+        try { const j = await r1.json(); if (j && j.error) msg = j.error; } catch (_) {}
+        throw new Error(msg);
+      }
+      const d1 = await r1.json();
+      if (!d1.success || !(d1.stores || []).length)
+        throw new Error(d1.error || '未查询到门店');
+      const store = d1.stores[0];
+      setStep(0, 'done');
+
+      // ②③④ 拉菜单/查优惠/核价：后端 /api/plans 内部依次完成 query-meals → 优惠查询 → 逐券试算核价
+      setStep(1, 'doing');
+      const r2 = await fetch(apiUrl('/api/plans', 'storeCode=' + encodeURIComponent(store.storeCode)
+                            + '&people=' + N + '&budget=' + B), { headers: HEADERS });
+      if (!r2.ok) {
+        let msg = 'GET /api/plans → HTTP ' + r2.status;
+        try { const j = await r2.json(); if (j && j.error) msg = j.error; } catch (_) {}
+        throw new Error(msg);
+      }
+      const d2 = await r2.json();
+      if (!d2.success || !(d2.plans || []).length)
+        throw new Error(d2.error || d2.warning || '未生成方案');
+      setStep(1, 'done');
+      setStep(2, 'done');   // 查询可叠优惠（后端已随 /api/plans 完成）
+      setStep(3, 'doing');
+      await sleep(450);     // 核价步骤的视觉节奏（真实核价已随上一个请求完成）
+      setStep(3, 'done');
+
+      // ⑤ 出方案：复用同一套三卡片渲染
+      showStore({
+        name: (d2.store && d2.store.name) || store.storeName,
+        address: (d2.store && d2.store.address) || store.address,
+        distance: store.distance
+      });
+      renderCards(d2.plans, N, B);
+      setStep(4, 'done');
+
+      let note = '<b>真实模式</b>：门店、菜单、优惠与价格均来自后端真实链路'
+        + '（query-nearby-stores → query-meals → 优惠查询 → calculate-price 逐券试算取最省）。';
+      const hints = d2.couponHints || {};
+      if ((hints.claimable || []).length)
+        note += '<br>可领未领券：' + hints.claimable.map(esc).join('、') + '（请到麦当劳 App 领取，本工具不代领）。';
+      if ((hints.wallet || []).length)
+        note += '<br>卡包内 ' + hints.wallet.length + ' 张券：' + hints.wallet.map(w =>
+          esc(w.title) + (w.price ? '（券后 ¥' + w.price + '）' : '')).join('、') + '。';
+      if (d2.defaultTakeWayCode)
+        note += '取餐方式编码：<code>' + esc(d2.defaultTakeWayCode) + '</code>（下单时传给 /api/create-order）。';
+      if ((d2.skippedTiers || []).length)
+        note += '<br>部分档位未出方案：' + d2.skippedTiers.map(esc).join('、') + '（菜单素材不足或核价失败）。';
+      realnote.innerHTML = note;
+      runAiReview(d2, N, B);   // 可选：大模型二次校验（开了开关且填了 Key 才真的调）
+    } catch (e) {
+      // 把正在进行的步骤标红，再弹提示并回退演示模式
+      const doingIdx = [...stepsEl.children].findIndex(el => el.classList.contains('doing'));
+      if (doingIdx >= 0) setStep(doingIdx, 'fail');
+      alert('请求失败：' + (e && e.message ? e.message : '请检查网络或 Token'));
+      setMode('demo');
+      runDemo();
+      realnote.innerHTML = '已自动回退到<b>演示模式</b>。真实模式默认调用公网后端（'
+        + API_BASE + '）：① 确认已填写有效 Token；② 确认网络可访问。'
+        + '如需改用本地后端，用 <code>?api=http://localhost:5000</code> 打开本页。';
+    } finally {
+      genBtn.disabled = false;
+    }
+  }
+
+  // ===== AI 二次校验（可选，调用用户自选大模型）=====
+  function renderReview(review){
+    if (!review) { aireviewEl.innerHTML = ''; return; }
+    let html = '<div class="ai-head">🤖 AI 二次校验</div>';
+    if (review.summary) html += '<div class="ai-summary">' + esc(review.summary) + '</div>';
+    const sugs = review.suggestions || [];
+    if (sugs.length) {
+      html += '<ul class="ai-sug">';
+      sugs.forEach(s => {
+        html += '<li><b>' + esc(s.tier || '建议') + '</b>：' + esc(s.advice || '')
+          + (s.why ? '<span class="ai-why">（' + esc(s.why) + '）</span>' : '') + '</li>';
+      });
+      html += '</ul>';
+    }
+    if (review.overall) html += '<div class="ai-overall">' + esc(review.overall) + '</div>';
+    html += '<div class="ai-note">注：AI 只给建议，最终价格以官方核价为准；换餐品/换券后请重新点「生成方案」。</div>';
+    aireviewEl.innerHTML = html;
+  }
+  function currentLlm(){
+    const p = LLM_PRESETS.find(x => x.id === llmModelSel.value) || LLM_PRESETS[0];
+    return {
+      baseUrl: p.id === 'custom' ? llmBase.value.trim() : p.baseUrl,
+      model: p.id === 'custom' ? llmModelName.value.trim() : p.model
+    };
+  }
+  async function runAiReview(d2, N, B){
+    const key = llmKey.value.trim();
+    if (!llmToggle.checked) { aireviewEl.innerHTML = ''; return; }
+    if (!key) {
+      aireviewEl.innerHTML = '<div class="ai-err">已开启 AI 校验，但没填大模型 API Key——请在上方填上你自己的 Key（或关掉开关跳过）。</div>';
+      return;
+    }
+    const llm = currentLlm();
+    if (!llm.baseUrl || !llm.model) {
+      aireviewEl.innerHTML = '<div class="ai-err">请填写自定义模型的 base_url 和模型名。</div>';
+      return;
+    }
+    aireviewEl.innerHTML = '<div class="ai-loading">🤖 AI 正在校验方案（约几秒）…</div>';
+    try {
+      const r = await fetch(apiUrl('/api/ai-review', ''), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-LLM-Key': key },
+        body: JSON.stringify({ baseUrl: llm.baseUrl, model: llm.model,
+          plans: d2.plans, store: d2.store || {}, people: N, budget: B,
+          hints: d2.couponHints || {} })
+      });
+      let msg = 'HTTP ' + r.status;
+      const j = await r.json().catch(() => null);
+      if (j && j.error) msg = j.error;
+      if (!r.ok || !j || !j.success) throw new Error(msg);
+      renderReview(j.review);
+    } catch (e) {
+      aireviewEl.innerHTML = '<div class="ai-err">AI 校验失败：' + esc(e && e.message ? e.message : '网络错误')
+        + '（不影响上面的方案，可检查 Key / 模型后重试）。</div>';
+    }
+  }
+
+  genBtn.onclick = () => {
+    if (mode === 'real') runReal(); else runDemo();
+  };
+
+  budget.oninput = () => {
+    budgetVal.textContent = budget.value;
+    // 已显示卡片时，实时重判超预算
+    const B = parseInt(budget.value);
+    [...cardsEl.children].forEach(card => {
+      if (!card.querySelector('.total')) return;
+      const total = parseFloat(card.querySelector('.total').textContent.replace('¥',''));
+      const over = total > B;
+      const badge = card.querySelector('.badge');
+      if (badge) { badge.className = 'badge ' + (over ? 'over' : 'ok'); badge.textContent = over ? '超出预算' : '预算内'; }
+    });
+  };
+
+  setMode(mode);
+  showStore();
+</script>
+</body>
+</html>
