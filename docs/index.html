@@ -8,7 +8,6 @@
   :root{
     --mcd-red:#DA291C;
     --mcd-yellow:#FFC72C;
-    --mcd-dark:#27251F;
     --bg:#FFF8F0;
     --card:#FFFFFF;
     --muted:#8A8577;
@@ -18,72 +17,79 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
     font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    line-height:1.6;
+    background:var(--bg);color:var(--text);line-height:1.6;
     padding:24px 16px 60px;
   }
   .wrap{max-width:960px;margin:0 auto;}
-  header{text-align:center;margin-bottom:28px;}
+  header{text-align:center;margin-bottom:24px;}
   .logo{
-    display:inline-block;background:var(--mcd-red);color:#fff;
-    font-weight:700;font-size:20px;padding:10px 22px;border-radius:999px;
-    box-shadow:0 4px 0 rgba(0,0,0,.12);
+    display:inline-block;background:var(--mcd-red);color:#fff;font-weight:700;
+    font-size:20px;padding:10px 24px;border-radius:999px;box-shadow:0 4px 0 rgba(0,0,0,.12);
   }
   h1{font-size:26px;margin:16px 0 6px;}
   .sub{color:var(--muted);font-size:14px;}
+
   .control{
     background:var(--card);border-radius:16px;padding:20px 24px;
-    box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;
-    display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;
+    box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:20px;
   }
-  .field{display:flex;flex-direction:column;gap:6px;}
+  .row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;margin-bottom:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;}
   .field label{font-size:13px;color:var(--muted);font-weight:500;}
-  select,input[type=range]{
-    font-size:15px;padding:8px 12px;border:1px solid #E4DED2;border-radius:8px;
-    background:#fff;min-width:140px;
+  select,input[type=number],input[type=range]{
+    font-size:15px;padding:10px 12px;border:1px solid #E4DED2;border-radius:8px;background:#fff;width:100%;
   }
   .budget-val{font-weight:700;color:var(--mcd-red);font-size:16px;}
-  .seg{display:flex;gap:8px;}
-  .seg button{
-    border:1px solid #E4DED2;background:#fff;border-radius:8px;
-    padding:8px 16px;font-size:15px;cursor:pointer;transition:.15s;
+  .btn{
+    background:var(--mcd-red);color:#fff;border:none;border-radius:12px;
+    font-size:17px;font-weight:700;padding:14px 28px;cursor:pointer;
+    width:100%;box-shadow:0 4px 0 #A31D12;transition:.1s;
   }
-  .seg button.active{background:var(--mcd-red);color:#fff;border-color:var(--mcd-red);}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #A31D12;}
+
+  .steps{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px;}
+  .step{
+    font-size:12px;color:var(--muted);background:#F2EEE4;border-radius:999px;
+    padding:5px 12px;display:flex;align-items:center;gap:6px;transition:.2s;
+  }
+  .step.doing{background:#FFF3D6;color:#8A6D1A;font-weight:600;}
+  .step.done{background:#E7F6EC;color:var(--green);}
+
   .storebar{
-    background:var(--mcd-yellow);border-radius:12px;padding:12px 18px;
-    margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+    background:var(--mcd-yellow);border-radius:12px;padding:12px 18px;margin-bottom:20px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
   }
   .storebar .name{font-weight:700;}
   .storebar .addr{font-size:13px;color:#5A5240;}
+
   .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
   @media(max-width:720px){.cards{grid-template-columns:1fr;}}
   .card{
-    background:var(--card);border-radius:16px;padding:20px;position:relative;
+    background:var(--card);border-radius:16px;padding:20px;
     box-shadow:0 2px 12px rgba(0,0,0,.05);border-top:5px solid var(--mcd-yellow);
+    animation:pop .35s ease;
   }
+  @keyframes pop{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   .card.econ{border-top-color:#A8C256;}
   .card.bal{border-top-color:var(--mcd-yellow);}
   .card.rich{border-top-color:var(--mcd-red);}
   .tier{font-size:15px;font-weight:700;margin-bottom:10px;}
   .total{font-size:28px;font-weight:700;color:var(--mcd-red);}
   .per{font-size:13px;color:var(--muted);margin-bottom:12px;}
-  .badge{
-    display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:12px;
-  }
+  .badge{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:12px;}
   .badge.ok{background:#E7F6EC;color:var(--green);}
   .badge.over{background:#FDE8E8;color:var(--mcd-red);}
   .items{list-style:none;font-size:14px;}
   .items li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #F0EBE0;}
   .items li span:last-child{color:var(--muted);}
-  .party{
-    margin-top:20px;background:#FFF3D6;border-radius:12px;padding:12px 16px;font-size:13px;
+
+  .realnote{
+    margin-top:20px;background:#F6F2E8;border-radius:12px;padding:12px 16px;font-size:13px;color:#5F5E5A;
   }
-  .party b{color:#8A6D1A;}
-  footer{text-align:center;margin-top:32px;color:var(--muted);font-size:12px;}
-  .tip{
-    display:inline-block;background:#F2EEE4;border-radius:8px;padding:8px 14px;
-  }
+  .realnote b{color:#8A6D1A;}
+
+  footer{text-align:center;margin-top:28px;color:var(--muted);font-size:12px;}
+  .tip{display:inline-block;background:#F2EEE4;border-radius:8px;padding:8px 14px;}
 </style>
 </head>
 <body>
@@ -91,138 +97,176 @@
   <header>
     <div class="logo">麦门聚餐管家</div>
     <h1>多人聚餐，一键理清怎么点</h1>
-    <p class="sub">选人数和预算，看三套方案 · 在线试玩（免登录）</p>
+    <p class="sub">输入人数和预算，点「生成方案」，看它一步步算给你 · 免登录试玩</p>
   </header>
 
   <div class="control">
-    <div class="field">
-      <label>城市</label>
-      <select id="citySel"></select>
+    <div class="row">
+      <div class="field">
+        <label>城市</label>
+        <select id="citySel"></select>
+      </div>
+      <div class="field">
+        <label>几个人</label>
+        <input type="number" id="people" value="4" min="1" max="20">
+      </div>
+      <div class="field">
+        <label>预算（元）：<span class="budget-val" id="budgetVal">120</span></label>
+        <input type="range" id="budget" min="20" max="500" step="5" value="120">
+      </div>
     </div>
-    <div class="field">
-      <label>人数</label>
-      <div class="seg" id="peopleSeg"></div>
-    </div>
-    <div class="field">
-      <label>预算（元）：<span class="budget-val" id="budgetVal"></span></label>
-      <input type="range" id="budget" min="20" max="300" step="5">
-    </div>
+    <button class="btn" id="genBtn">🍔 生成聚餐方案</button>
+    <div class="steps" id="steps"></div>
   </div>
 
   <div class="storebar" id="storebar"></div>
   <div class="cards" id="cards"></div>
-
-  <div class="party" id="party"></div>
+  <div class="realnote" id="realnote"></div>
 
   <footer>
     <div class="tip">演示数据，非实时价格，正式版价格以麦当劳官方实时结果为准</div>
   </footer>
 </div>
 
-<script src="./data.js"></script>
 <script>
-  const D = window.DEMO_DATA;
-  const peopleSeg = document.getElementById('peopleSeg');
   const citySel = document.getElementById('citySel');
+  const peopleInput = document.getElementById('people');
   const budget = document.getElementById('budget');
   const budgetVal = document.getElementById('budgetVal');
+  const genBtn = document.getElementById('genBtn');
+  const stepsEl = document.getElementById('steps');
   const storebar = document.getElementById('storebar');
-  const cards = document.getElementById('cards');
-  const party = document.getElementById('party');
-
-  let currentPeople = D.datasets[1].people; // 默认 4 人
+  const cardsEl = document.getElementById('cards');
+  const realnote = document.getElementById('realnote');
 
   // 每座城市对应一家门店（演示用）
   const CITY_STORES = {
-    '上海': { name: '麦当劳（徐家汇店）', address: '上海市徐汇区肇嘉浜路1111号' },
+    '上海': { name: '麦当劳上海黄浦华旭国际大厦餐厅', address: '南京东路街道西藏中路336号' },
     '北京': { name: '麦当劳（王府井店）', address: '北京市东城区王府井大街138号' },
     '深圳': { name: '麦当劳（华强北店）', address: '深圳市福田区华强北路1002号' },
     '广州': { name: '麦当劳（天河城店）', address: '广州市天河区天河路208号' },
     '杭州': { name: '麦当劳（湖滨店）', address: '杭州市上城区延安路255号' }
   };
-
-  // 城市下拉
-  D.cities.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c; o.textContent = c; citySel.appendChild(o);
+  Object.keys(CITY_STORES).forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; citySel.appendChild(o);
   });
-  citySel.onchange = render;
+  citySel.onchange = () => showStore();
 
-  // 人数分段
-  D.datasets.forEach(ds => {
-    const b = document.createElement('button');
-    b.textContent = ds.people + ' 人';
-    b.dataset.people = ds.people;
-    b.onclick = () => { currentPeople = ds.people; render(); };
-    peopleSeg.appendChild(b);
-  });
-
-  function dataset(){
-    return D.datasets.find(d => d.people === currentPeople) || D.datasets[0];
-  }
+  // 内置菜单素材池（真实套餐项 + 合理单价，用于演示规则生成）
+  const MENU = {
+    econ: { name: '大堡口福三件套', price: 25.5 },      // 单人完整餐
+    bal:  { name: '板烧鸡腿堡三件套', price: 34.0 },
+    rich: { name: '培根安格斯厚牛堡三件套', price: 40.0 },
+    side: { name: '麦乐鸡4块', price: 11.5 }
+  };
 
   function fmt(n){ return '¥' + n.toFixed(2); }
 
-  function render(){
-    const ds = dataset();
-    budget.max = Math.max(300, Math.round(ds.budget * 2));
-    budget.value = ds.budget;
-    budgetVal.textContent = budget.value;
-
-    // 高亮人数按钮
-    [...peopleSeg.children].forEach(b => b.classList.toggle('active', Number(b.dataset.people) === currentPeople));
-
-    // 门店（跟随所选城市）
-    const st = CITY_STORES[citySel.value] || ds.store;
+  function showStore(){
+    const st = CITY_STORES[citySel.value];
     storebar.innerHTML = '<span class="name">' + st.name + '</span><span class="addr">' + st.address + '</span>';
+  }
 
-    // 卡片
-    cards.innerHTML = '';
-    if (ds.real_pricing) {
-      cards.insertAdjacentHTML('beforeend',
-        '<div style="grid-column:1/-1;font-size:12px;color:#8A6D1A;background:#FFF3D6;border-radius:8px;padding:8px 14px;margin-bottom:4px;">本组方案价格来自真实 MCP 核价（calculate-price），其余人数组为示意数据</div>'
-      );
+  // 规则生成三套方案（演示用：三档单人套餐 × 人数，价格来自素材池）
+  function generatePlans(N, budget){
+    function combo(pairs){ // pairs: [{item, qty}]
+      let total = 0, list = [];
+      pairs.forEach(({item, qty}) => {
+        total += item.price * qty;
+        list.push({ name: item.name, qty: qty, price: item.price });
+      });
+      return { total: Math.round(total * 100) / 100, items: list };
     }
-    ds.plans.forEach(p => {
+    const econ = combo([{item: MENU.econ, qty: N}]);
+    const bal  = combo([{item: MENU.bal, qty: N}]);
+    const rich = combo([{item: MENU.rich, qty: N}, {item: MENU.side, qty: N}]);
+    return [
+      { tier: '经济型', total: econ.total, items: econ.items },
+      { tier: '均衡型', total: bal.total, items: bal.items },
+      { tier: '丰盛型', total: rich.total, items: rich.items }
+    ].map(p => ({
+      tier: p.tier,
+      total: p.total,
+      per_person: Math.round(p.total / N * 100) / 100,
+      over_budget: p.total > budget,
+      items: p.items
+    }));
+  }
+
+  function renderCards(plans, N, budget){
+    cardsEl.innerHTML = '';
+    plans.forEach(p => {
       const cls = p.tier === '经济型' ? 'econ' : (p.tier === '均衡型' ? 'bal' : 'rich');
-      const per = (p.total / currentPeople).toFixed(2);
-      const over = p.total > budget.value;
-      const badge = over
-        ? '<span class="badge over">超出预算</span>'
-        : '<span class="badge ok">预算内</span>';
-      const items = p.items.map(i => {
-        const price = (i.price == null) ? '' : fmt(i.price);
-        return '<li><span>' + i.name + ' ×' + i.qty + '</span><span>' + price + '</span></li>';
-      }).join('');
-      cards.insertAdjacentHTML('beforeend',
+      const over = p.total > budget;
+      const badge = over ? '<span class="badge over">超出预算</span>' : '<span class="badge ok">预算内</span>';
+      const items = p.items.map(i =>
+        '<li><span>' + i.name + ' ×' + i.qty + '</span><span>' + fmt(i.price * i.qty) + '</span></li>'
+      ).join('');
+      cardsEl.insertAdjacentHTML('beforeend',
         '<div class="card ' + cls + '">'
         + '<div class="tier">' + p.tier + '</div>'
         + '<div class="total">' + fmt(p.total) + '</div>'
-        + '<div class="per">人均 ' + fmt(per) + '</div>'
+        + '<div class="per">人均 ' + fmt(p.per_person) + '</div>'
         + badge
         + '<ul class="items">' + items + '</ul>'
         + '</div>'
       );
     });
-
-    // 派对信息
-    party.innerHTML = '<b>派对 / 团餐</b>：' + ds.party.note;
   }
 
-  budget.oninput = () => {
-    budgetVal.textContent = budget.value;
-    // 预算变化时重新判定超预算
-    const ds = dataset();
-    [...cards.children].forEach((card, i) => {
-      const p = ds.plans[i];
-      const over = p.total > budget.value;
-      const badge = card.querySelector('.badge');
-      badge.className = 'badge ' + (over ? 'over' : 'ok');
-      badge.textContent = over ? '超出预算' : '预算内';
+  // 模拟调用链动画
+  const STEPS = [
+    { tool: 'query-nearby-stores', label: '查附近门店' },
+    { tool: 'query-meals', label: '拉取实时菜单' },
+    { tool: 'calculate-price', label: '官方整单核价' },
+    { tool: '组装方案', label: '生成三套方案' }
+  ];
+  function animateSteps(done){
+    stepsEl.innerHTML = '';
+    STEPS.forEach((s, i) => {
+      const el = document.createElement('span');
+      el.className = 'step'; el.textContent = s.label;
+      stepsEl.appendChild(el);
+      setTimeout(() => {
+        el.classList.add('doing');
+        setTimeout(() => {
+          el.classList.remove('doing'); el.classList.add('done');
+          el.textContent = '✓ ' + s.label;
+          if (i === STEPS.length - 1) done();
+        }, 450);
+      }, i * 550);
+    });
+  }
+
+  genBtn.onclick = () => {
+    const N = Math.max(1, parseInt(peopleInput.value) || 4);
+    const B = parseInt(budget.value);
+    genBtn.disabled = true;
+    showStore();
+    cardsEl.innerHTML = '';
+    animateSteps(() => {
+      const plans = generatePlans(N, B);
+      renderCards(plans, N, B);
+      realnote.innerHTML = '<b>真实核价记录</b>：我们曾用真实 MCP 跑过一次 —— 麦乐鸡经典中套餐×2 + 麦麦周末双人餐×1，官方返回 <b>10090 分 = 100.9 元</b>，与菜单价验算一致。本页面为免 Token 演示，三套方案按内置菜单规则生成，正式版由 WorkBuddy Skill 调真实接口核价。';
+      genBtn.disabled = false;
     });
   };
 
-  render();
+  budget.oninput = () => {
+    budgetVal.textContent = budget.value;
+    // 已显示卡片时，实时重判超预算
+    const N = Math.max(1, parseInt(peopleInput.value) || 4);
+    const B = parseInt(budget.value);
+    [...cardsEl.children].forEach((card, i) => {
+      if (!card.querySelector('.total')) return;
+      const total = parseFloat(card.querySelector('.total').textContent.replace('¥',''));
+      const over = total > B;
+      const badge = card.querySelector('.badge');
+      if (badge) { badge.className = 'badge ' + (over ? 'over' : 'ok'); badge.textContent = over ? '超出预算' : '预算内'; }
+    });
+  };
+
+  showStore();
 </script>
 </body>
 </html>
