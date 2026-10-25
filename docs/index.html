@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麦门聚餐管家 · 在线试玩</title>
+<style>
+  :root{
+    --mcd-red:#DA291C;
+    --mcd-yellow:#FFC72C;
+    --mcd-dark:#27251F;
+    --bg:#FFF8F0;
+    --card:#FFFFFF;
+    --muted:#8A8577;
+    --green:#1E9E5A;
+    --text:#27251F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.6;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+  header{text-align:center;margin-bottom:28px;}
+  .logo{
+    display:inline-block;background:var(--mcd-red);color:#fff;
+    font-weight:700;font-size:20px;padding:10px 22px;border-radius:999px;
+    box-shadow:0 4px 0 rgba(0,0,0,.12);
+  }
+  h1{font-size:26px;margin:16px 0 6px;}
+  .sub{color:var(--muted);font-size:14px;}
+  .control{
+    background:var(--card);border-radius:16px;padding:20px 24px;
+    box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;
+    display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;
+  }
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:13px;color:var(--muted);font-weight:500;}
+  select,input[type=range]{
+    font-size:15px;padding:8px 12px;border:1px solid #E4DED2;border-radius:8px;
+    background:#fff;min-width:140px;
+  }
+  .budget-val{font-weight:700;color:var(--mcd-red);font-size:16px;}
+  .seg{display:flex;gap:8px;}
+  .seg button{
+    border:1px solid #E4DED2;background:#fff;border-radius:8px;
+    padding:8px 16px;font-size:15px;cursor:pointer;transition:.15s;
+  }
+  .seg button.active{background:var(--mcd-red);color:#fff;border-color:var(--mcd-red);}
+  .storebar{
+    background:var(--mcd-yellow);border-radius:12px;padding:12px 18px;
+    margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  }
+  .storebar .name{font-weight:700;}
+  .storebar .addr{font-size:13px;color:#5A5240;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:720px){.cards{grid-template-columns:1fr;}}
+  .card{
+    background:var(--card);border-radius:16px;padding:20px;position:relative;
+    box-shadow:0 2px 12px rgba(0,0,0,.05);border-top:5px solid var(--mcd-yellow);
+  }
+  .card.econ{border-top-color:#A8C256;}
+  .card.bal{border-top-color:var(--mcd-yellow);}
+  .card.rich{border-top-color:var(--mcd-red);}
+  .tier{font-size:15px;font-weight:700;margin-bottom:10px;}
+  .total{font-size:28px;font-weight:700;color:var(--mcd-red);}
+  .per{font-size:13px;color:var(--muted);margin-bottom:12px;}
+  .badge{
+    display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:12px;
+  }
+  .badge.ok{background:#E7F6EC;color:var(--green);}
+  .badge.over{background:#FDE8E8;color:var(--mcd-red);}
+  .items{list-style:none;font-size:14px;}
+  .items li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #F0EBE0;}
+  .items li span:last-child{color:var(--muted);}
+  .party{
+    margin-top:20px;background:#FFF3D6;border-radius:12px;padding:12px 16px;font-size:13px;
+  }
+  .party b{color:#8A6D1A;}
+  footer{text-align:center;margin-top:32px;color:var(--muted);font-size:12px;}
+  .tip{
+    display:inline-block;background:#F2EEE4;border-radius:8px;padding:8px 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">麦门聚餐管家</div>
+    <h1>多人聚餐，一键理清怎么点</h1>
+    <p class="sub">选人数和预算，看三套方案 · 在线试玩（免登录）</p>
+  </header>
+
+  <div class="control">
+    <div class="field">
+      <label>城市</label>
+      <select id="citySel"></select>
+    </div>
+    <div class="field">
+      <label>人数</label>
+      <div class="seg" id="peopleSeg"></div>
+    </div>
+    <div class="field">
+      <label>预算（元）：<span class="budget-val" id="budgetVal"></span></label>
+      <input type="range" id="budget" min="20" max="300" step="5">
+    </div>
+  </div>
+
+  <div class="storebar" id="storebar"></div>
+  <div class="cards" id="cards"></div>
+
+  <div class="party" id="party"></div>
+
+  <footer>
+    <div class="tip">演示数据，非实时价格，正式版价格以麦当劳官方实时结果为准</div>
+  </footer>
+</div>
+
+<script src="./data.js"></script>
+<script>
+  const D = window.DEMO_DATA;
+  const peopleSeg = document.getElementById('peopleSeg');
+  const citySel = document.getElementById('citySel');
+  const budget = document.getElementById('budget');
+  const budgetVal = document.getElementById('budgetVal');
+  const storebar = document.getElementById('storebar');
+  const cards = document.getElementById('cards');
+  const party = document.getElementById('party');
+
+  let currentPeople = D.datasets[1].people; // 默认 4 人
+
+  // 每座城市对应一家门店（演示用）
+  const CITY_STORES = {
+    '上海': { name: '麦当劳（徐家汇店）', address: '上海市徐汇区肇嘉浜路1111号' },
+    '北京': { name: '麦当劳（王府井店）', address: '北京市东城区王府井大街138号' },
+    '深圳': { name: '麦当劳（华强北店）', address: '深圳市福田区华强北路1002号' },
+    '广州': { name: '麦当劳（天河城店）', address: '广州市天河区天河路208号' },
+    '杭州': { name: '麦当劳（湖滨店）', address: '杭州市上城区延安路255号' }
+  };
+
+  // 城市下拉
+  D.cities.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c; citySel.appendChild(o);
+  });
+  citySel.onchange = render;
+
+  // 人数分段
+  D.datasets.forEach(ds => {
+    const b = document.createElement('button');
+    b.textContent = ds.people + ' 人';
+    b.dataset.people = ds.people;
+    b.onclick = () => { currentPeople = ds.people; render(); };
+    peopleSeg.appendChild(b);
+  });
+
+  function dataset(){
+    return D.datasets.find(d => d.people === currentPeople) || D.datasets[0];
+  }
+
+  function fmt(n){ return '¥' + n.toFixed(2); }
+
+  function render(){
+    const ds = dataset();
+    budget.max = Math.max(300, Math.round(ds.budget * 2));
+    budget.value = ds.budget;
+    budgetVal.textContent = budget.value;
+
+    // 高亮人数按钮
+    [...peopleSeg.children].forEach(b => b.classList.toggle('active', Number(b.dataset.people) === currentPeople));
+
+    // 门店（跟随所选城市）
+    const st = CITY_STORES[citySel.value] || ds.store;
+    storebar.innerHTML = '<span class="name">' + st.name + '</span><span class="addr">' + st.address + '</span>';
+
+    // 卡片
+    cards.innerHTML = '';
+    if (ds.real_pricing) {
+      cards.insertAdjacentHTML('beforeend',
+        '<div style="grid-column:1/-1;font-size:12px;color:#8A6D1A;background:#FFF3D6;border-radius:8px;padding:8px 14px;margin-bottom:4px;">本组方案价格来自真实 MCP 核价（calculate-price），其余人数组为示意数据</div>'
+      );
+    }
+    ds.plans.forEach(p => {
+      const cls = p.tier === '经济型' ? 'econ' : (p.tier === '均衡型' ? 'bal' : 'rich');
+      const per = (p.total / currentPeople).toFixed(2);
+      const over = p.total > budget.value;
+      const badge = over
+        ? '<span class="badge over">超出预算</span>'
+        : '<span class="badge ok">预算内</span>';
+      const items = p.items.map(i => {
+        const price = (i.price == null) ? '' : fmt(i.price);
+        return '<li><span>' + i.name + ' ×' + i.qty + '</span><span>' + price + '</span></li>';
+      }).join('');
+      cards.insertAdjacentHTML('beforeend',
+        '<div class="card ' + cls + '">'
+        + '<div class="tier">' + p.tier + '</div>'
+        + '<div class="total">' + fmt(p.total) + '</div>'
+        + '<div class="per">人均 ' + fmt(per) + '</div>'
+        + badge
+        + '<ul class="items">' + items + '</ul>'
+        + '</div>'
+      );
+    });
+
+    // 派对信息
+    party.innerHTML = '<b>派对 / 团餐</b>：' + ds.party.note;
+  }
+
+  budget.oninput = () => {
+    budgetVal.textContent = budget.value;
+    // 预算变化时重新判定超预算
+    const ds = dataset();
+    [...cards.children].forEach((card, i) => {
+      const p = ds.plans[i];
+      const over = p.total > budget.value;
+      const badge = card.querySelector('.badge');
+      badge.className = 'badge ' + (over ? 'over' : 'ok');
+      badge.textContent = over ? '超出预算' : '预算内';
+    });
+  };
+
+  render();
+</script>
+</body>
+</html>
