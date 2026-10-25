@@ -2,9 +2,13 @@
 name: mcd-party-meal-planner
 description: >-
   多人麦当劳聚餐管家：帮一群人快速选定麦当劳门店、按预算排出经济/均衡/丰盛三套方案、
-  用官方接口核价、并可查询门店派对场次信息。当用户提到"多人聚餐""团餐""聚会点麦当劳"
-  "按预算点麦当劳""几个人一起吃麦当劳""怎么点划算"等场景时触发。
-version: 1.0.0
+  自动叠加门店券/活动/随单购卡等优惠、用官方接口核价、并可查询门店派对场次信息。
+  当用户提到"多人聚餐""团餐""聚会点麦当劳""按预算点麦当劳""几个人一起吃麦当劳"
+  "怎么点划算""有什么优惠"等场景时触发。
+  不适用于：单人点单、单纯询问某套餐价格或详情（走常规麦当劳 MCP 流程）。
+  依赖：需已连接麦当劳 MCP（mcd-mcp）连接器，Token 经环境变量提供，不写进任何文件。
+  降级：MCP 未连接或调用失败时按"失败即停"如实告知，建议改用麦当劳官方 App/小程序点单。
+version: 1.1.2
 ---
 
 # 麦门聚餐管家（麦当劳团餐 Skill）
@@ -22,6 +26,11 @@ version: 1.0.0
 
 单人点单不触发；纯问某套餐详情不触发（走常规麦当劳 MCP 流程）。
 
+### 前置依赖与降级
+
+- **依赖**：麦当劳 MCP 连接器（`mcd-mcp`，`https://mcp.mcd.cn`）已连接；Token 只走环境变量，不写进任何文件
+- **降级**：连接器未配置或调用失败 → 按工程铁律"失败即停"，如实告知用户并建议改用麦当劳官方 App/小程序，不猜价格、不编方案
+
 ---
 
 ## 数据 JSON Schema（最终输出必须符合）
@@ -34,10 +43,12 @@ version: 1.0.0
   "people": 4,
   "budget": 120,
   "plans": [
-    { "tier": "经济型", "total": 89.0, "per_person": 22.25, "over_budget": false,
+    { "tier": "经济型", "total": 89.0, "per_person": 22.25, "over_budget": false, "saved": 5.7,
       "items": [ { "name": "麦乐鸡4块", "qty": 2, "price": 11.5 } ] },
-    { "tier": "均衡型", "total": 118.5, "per_person": 29.63, "over_budget": false, "items": [] },
-    { "tier": "丰盛型", "total": 156.0, "per_person": 39.0, "over_budget": true, "items": [] }
+    { "tier": "均衡型", "total": 118.5, "per_person": 29.63, "over_budget": false, "saved": 5.7,
+      "items": [ { "name": "板烧鸡腿堡三件套", "qty": 2, "price": 39.0 }, { "name": "冰美式中杯", "qty": 1, "price": 13.3 } ] },
+    { "tier": "丰盛型", "total": 156.0, "per_person": 39.0, "over_budget": true, "saved": 14.2,
+      "items": [ { "name": "全明星双人餐", "qty": 2, "price": 59.0 }, { "name": "麦麦脆汁鸡", "qty": 1, "price": 12.5 } ] }
   ],
   "party": { "bookable": false, "note": "该门店暂无派对场次" }
 }
@@ -48,11 +59,12 @@ version: 1.0.0
 - `store.name` / `store.address`：选定门店名称与地址
 - `people` / `budget`：人数与总预算（无预算填 `null` 或省略）
 - `plans`：固定三档 `经济型` / `均衡型` / `丰盛型`
-  - `total`：该档总价（元）
+  - `total`：该档总价（元，已叠加优惠）
   - `per_person`：人均 = total ÷ people（保留两位小数）
   - `over_budget`：是否超预算
-  - `items[]`：餐品清单，`name` 餐品名、`qty` 数量、`price` 单价（元）
-- `party`：派对预约信息；`bookable` 是否可预约，`note` 说明文案
+  - `saved`：该档叠加优惠共省金额（元）= 原价合计 − 叠加后总价，无优惠可叠填 `0`
+  - `items[]`：餐品清单，`name` 餐品名、`qty` 数量、`price` 单价（元，用券商品为用券后单价）
+- `party`：派对预约信息；`bookable` 是否可预约，`note` 说明文案（无可约场次时统一写"该门店暂无派对场次"）
 
 ---
 
@@ -70,6 +82,7 @@ version: 1.0.0
 4. **口味偏好**（可选）：想吃炸鸡 / 汉堡 / 牛堡 / 有小朋友 / 忌口等
 
 > 若用户只给模糊需求（如"随便""想吃炸鸡"），先给一个合理默认（如按 4 人、无硬预算、以门店多人餐为主），继续推进，别卡在第一步。
+> **澄清至多 2 轮**：缺的信息集中问一轮；再没给全，就用默认值推进，不反复追问。
 
 ### Step 2 · 查附近门店
 
@@ -86,40 +99,67 @@ version: 1.0.0
 - 从 `data.meals` 映射表读取餐品名与价格
 - 优先选"多人餐 / 小食拼盘"分类，兼顾口味偏好
 - ⚠️ 菜单显示价为"元"，仅供搭方案用；**最终价格以 calculate-price 为准**
+- ⚠️ **时段菜单**：`query-meals` 返回的可能是早餐菜单（约 05:14–10:15，各店略有差异）或正餐菜单。**以 `query-meals` 实际返回为准**——预约时段文案写的切换时间可能偏早（实测有门店文案写 10:15 截止、10:21 仍返回早餐菜单）。早餐时段没有"多人餐/小食拼盘"分类时，用「双人餐（如满分厚松饼堡双人餐）+ 单品堡/小食/冰淇淋」组合替代，并在输出里注明"当前为早餐时段菜单"，主动提出可切换；用户要求正餐时，重新调 `query-meals` 确认菜单已切换再搭方案
+- ⚠️ **随单购卡价陷阱**：菜单中 `discountType` 为"随单购早餐卡优惠"/"随单购麦金卡优惠"且 `canWithOrder=true` 的餐品，其 `currentPrice` 必须随单购买对应卡（`withOrder.cardId`）才能享受，核价不传 `withOrder` 会按 `originalPrice` 计。默认优先选 `discountType=null` 的餐品搭方案；若卡惠餐品更划算，把 `query-meals` 返回的 `withOrder`（cardId/cardType 等）带进 `calculate-price` 的 `withOrder` 参数，**连同卡价一起核总价后对比取舍**
+- 📎 更多实测坑点（核价名差异/优惠工具边界）见 `references/tool-notes.md`
 
-### Step 4 · 按预算搭三套方案 + 官方核价
+### Step 3.5 · 查可叠加优惠（满减/活动/券/卡）
 
-按人数和预算搭出三档（每档都遵循 `query-meals` 里给的搭配规则）：
+搭方案前，先把当前能叠的优惠查全（到店自取场景）：
+
+1. `query-store-coupons`（`storeCode`、`orderType=1`、`beType=1`）→ 该门店+订单类型下可用的券，拿 `couponId`/`couponCode`、`tradeDateTime` 有效期、`products` 适用餐品
+2. `query-my-coupons`（无参）→ 用户卡包里的券及用券价格，作为补充和兜底
+3. `available-coupons`（无参）→ 还有哪些券**可领未领**（如"免费脆薯饼""11.9 元麦辣鸡腿堡"）；逐张列出名称提示用户去领，**不代领**（领券是写操作，见工程铁律）
+4. `campaign-calendar`（无参，可选）→ 当月营销活动日历，发现进行中/即将开始的活动（如早餐卡 6 折、麦金卡特权、加价购、新品特价）；只作搭配参考，真实优惠以 `calculate-price` 为准
+
+- 满减/满折/第二份半价等促销：到店场景无独立查询接口，由 `calculate-price` **自动计算**，以其返回的 `discount`/`enjoyed` 为准；团餐场景（beType=6）可另调 `query-promotions` 拿满减规则
+- 记录每张券的适用餐品（`products[].productCode`），搭档时优先把"券适用餐品"编进方案，实现叠加
+- **务必用满**：只要查到了可用券，就必须设法用进至少一档；确实用不上（商品不匹配/已过期/凑了反而更贵/可领未领）时，必须在输出里说明原因，不许默默不用
+- **多券试算**：有多张券时逐张试算（同单多张券也可尝试同时叠加），以 `calculate-price` 结果为准，取整体最省
+- **凑门槛提示**：每档核价后看 `enjoyable`（可享受的优惠）和 `balance`（门槛差额）——离满减/满折门槛只差一点时，提示"再加 X 元可减 Y"，但不硬凑没人吃的餐品
+- 券过期或与方案餐品不匹配时，退回无券方案并在文案里说明，不许假装用了券
+
+### Step 4 · 按预算搭三套方案 + 官方核价（含优惠叠加）
+
+按人数和预算搭出三档（每档都遵循 `query-meals` 里给的搭配规则，并叠加 Step 3.5 查到的优惠）：
 
 - **经济型**：以"单人餐/小食/随心配"为主，人均尽量低，控制不超预算
 - **均衡型**：汉堡+小食+饮料的完整组合，接近预算
 - **丰盛型**：多人分享餐/拼盘，可能超预算（允许超，但要在文案里明说）
 
-每搭好一档，**立即调用 `calculate-price` 整单核价**（`storeCode`、`orderType=1`、`beType=1`、`items[]` 含 productCode+quantity）。
+**叠加规则（在顾客所有要求之上，务必做到实惠叠加）**：
 
-- ⚠️ **铁律：换任何餐品都必须重新调 calculate-price 整单核价，不许拿菜单显示价加减**
+1. **顾客要求优先**：人数、预算、口味偏好先满足，在此之上把能叠的优惠全部叠上
+2. 每档方案尽量用上 Step 3.5 查到的券：把券适用餐品编进该档（如券是"中杯美式 7 折"，方案里就带上美式中杯）
+3. 能凑门槛的促销（满减/第二份半价）在搭配时刻意凑，但**不许为了凑单买没人吃的**
+4. 卡惠套餐（随单购卡）连同 `withOrder` 一起核价，与无卡版对比后取总价低的
+5. `campaign-calendar` 里进行中的活动（如早餐卡 6 折、麦金卡特权、加价购）纳入搭配考虑
+6. 每搭好一档，**立即调用 `calculate-price` 整单核价**（`storeCode`、`orderType=1`、`beType=1`、`items[]` 含 productCode+quantity；用券的 item 带上 `couponId`+`couponCode`；用卡带上 `withOrder`）
+7. 对比"带券/带卡"与"不带"两版核价结果，输出更实惠的那版，并在文案里写明省了多少（`saved`）
+8. 核价后检查 `enjoyable`/`balance`，按 Step 3.5 规则给凑门槛提示
+
+- ⚠️ **铁律：换任何餐品、换任何券/卡，都必须重新调 calculate-price 整单核价，不许拿菜单显示价加减，更不许自己心算优惠**
 - ⚠️ 返回价格为"分"，展示时 ÷100 转成"元"
-- 记下每档 `total`，算 `per_person`（total ÷ people），标 `over_budget`
+- 记下每档 `total`、原价合计与 `saved`，算 `per_person`（total ÷ people），标 `over_budget`
 
 ### Step 5 · 查派对预约信息
 
-按城市→门店→日期→场次四级查（只查信息，**不下单**）：
+按城市→门店→日期→场次四级查（只查信息，**不下单**）：先调 `mall-points-products`（`catRuleIds="1>6>20,1>6>21"`，按 `status=2` 上架中筛选）拿 `spuId` → `query-party-city`（spuId，拿城市 `code`/经纬度）→ `query-party-store`（code+经纬度+spuId，拿门店 `code`）→ `query-party-store-date`（storeCode+spuId，拿日期 `date`）→ `query-party-store-session`（storeCode+`dateStr`+spuId，拿场次）。完整入参/出参与坑点见 `references/party-chain.md`。
 
-1. **spuId 前置**：先调 `mall-points-products`（`catRuleIds="1>6>20,1>6>21"`）拿一个派对商品的 `spuId`（默认选生日类/主题类常规款，按 `status=2` 上架中筛选）
-2. `query-party-city`（`spuId`）→ 找所选城市，拿 `code`/`latitude`/`longitude`
-3. `query-party-store`（`code`、`latitude`、`longitude`、`spuId`）→ 找所选门店，拿门店 `code`（注意字段名是 code）
-4. `query-party-store-date`（`storeCode`=上一步 code、`spuId`）→ 拿可预约日期（字段名 date）
-5. `query-party-store-session`（`storeCode`、`dateStr`=上一步 date、`spuId`）→ 拿场次（时间、成团人数、剩余）
-
-- ⚠️ 门店编码字段名是 `code`；日期返回字段名 `date`，传给 session 时入参名是 `dateStr`
-- ⚠️ 场次 `price` 单位是"分"，÷100 转元
-- 若 `query-party-store-date` 返回空数组（`data:[]`）或报错：**立即短路为 `party.bookable=false`**，note 说明"该门店暂无派对场次"，**不再继续调 session**（没有日期就必然没有场次）
-- 若 `query-party-store` 查不到所选门店 / 城市无派对：同样 bookable=false 并说明
+- ⚠️ 门店编码字段名是 `code`；日期返回字段名 `date`，传给 session 时入参名是 `dateStr`；场次 `price` 单位是"分"，÷100 转元
+- ⚠️ `query-party-store-date` 返回空数组（`data:[]`）或报错 → **立即短路 `party.bookable=false`**，note 说明"该门店暂无派对场次"，**不再继续调 session**（没有日期就必然没有场次）；`query-party-store` 查不到所选门店 / 城市无派对，同样 bookable=false 并说明
 - **只出可预约信息，绝不真实下单**（写操作默认 dry_run）
 
 ### Step 6 · 汇总输出
 
 把三套方案 + 派对信息，按 JSON Schema 结构 + 人话一并给出。
+
+展示规则：
+
+- 餐品名以 `calculate-price` 返回的 `productName` 为准（可能与 `query-meals` 菜单名略有差异，如"美式"→"冰美式中杯"）
+- 取餐方式顺带展示 `takeWayList`（如堂食 / 外带取餐柜）
+- 每档必须写明叠加了什么优惠、省了多少（`saved`），如"用新人 7 折券，美式中杯 19→13.3，整单省 5.7 元"
+- 有可领未领的券（`available-coupons`）时提示一句，不代领
 
 人话示例（不能只甩 JSON）：
 
@@ -127,15 +167,18 @@ version: 1.0.0
 > - **经济型 89.0 元**：人均 22.3，麦乐鸡套餐×2 + 小食拼盘，不超预算 ✅
 > - **均衡型 118.5 元**：人均 29.6，板烧鸡腿堡三件套×2 + 麦麦周末双人餐，刚好在预算内 ✅
 > - **丰盛型 156.0 元**：人均 39.0，全明星双人餐×2 + 麦麦脆汁鸡，超预算 36 元 ⚠️
+> 优惠：每档都带了「新人专享-中杯美式7折」券，美式中杯 19→13.3，整单再省 5.7 元；你还有 1 张中杯奶铁7折券没用到（可领的券已领完）。
 > 派对：这家店暂无可预约场次，想办派对的话我给你换家店看看。
 
 ---
 
-## 派对四级查询顺序（City → Store → Date → Session）
+## 资源索引（按需加载）
 
-`query-party-city → query-party-store → query-party-store-date → query-party-store-session`
-
-（前置：先经 `mall-points-products` 拿 spuId。）
+| 资料 | 何时读 |
+|---|---|
+| `references/party-chain.md` | 走 Step 5 派对查询时：四级链路完整入参/出参、字段名坑、短路规则 |
+| `references/tool-notes.md` | 搭方案遇菜单/价格/券疑难时：实测坑点与优惠工具边界 |
+| `评测集.md` | 交付前自打勾：主链路/边界/叠加/反触发判分标准 |
 
 ---
 
@@ -143,7 +186,9 @@ version: 1.0.0
 
 1. 方案数据严格用上文 JSON Schema
 2. 每个方案用一行/一小段人话讲清：合计、人均、是否超预算
-3. 不要只甩 JSON，一定要配人话；也不要只讲人话，JSON 要作为结构化结果给出
+3. 每档必须讲清叠加了什么优惠、省了多少（`saved`）
+4. 不要只甩 JSON，一定要配人话；也不要只讲人话，JSON 要作为结构化结果给出
+5. 交付前对照 `评测集.md` 相关条目自打勾
 
 ---
 
@@ -158,5 +203,20 @@ version: 1.0.0
 ## 工程铁律（必须遵守）
 
 1. **换餐品必重核价**：任何餐品调整后，都必须重新调 `calculate-price` 整单核价，绝不允许用菜单显示价自行加减。
-2. **失败即停**：接口调用失败就停止本轮，不猜价格、不瞎编，如实告诉用户并建议重试。
-3. **只读不下单**：所有写操作（创建订单、预约派对）默认 `dry_run`，本 Skill 只出方案和预约信息，不真实下单、不碰支付。
+2. **换优惠必重核价**：任何券/卡/组合变化，都必须重新调 `calculate-price` 整单核价；优惠金额以返回的 `discount`/`enjoyed` 为准，不自己心算。
+3. **不代领券**：`auto-bind-coupons` 等领券操作是写动作，本 Skill 只查券、只把券用于核价，不替用户领券（提示用户自行领取）。
+4. **失败即停**：接口调用失败就停止本轮，不猜价格、不瞎编，如实告诉用户并建议重试。
+5. **只读不下单**：所有写操作（创建订单、预约派对、领券）默认 `dry_run`，本 Skill 只出方案和预约信息，不真实下单、不碰支付。
+6. **澄清至多 2 轮**：信息缺失集中问一轮，再缺就用默认值（4 人/无硬预算）推进，不反复追问卡住流程。
+
+---
+
+## 更新记录
+
+- **v1.1.2（2026-10-25）**
+  - 按质检报告修复：description 补全五段式（何时不用/依赖/降级）；新增「前置依赖与降级」小节；新增资源索引
+  - 新增可触线纪律"澄清至多 2 轮"；评测集补反例 ×2 + 优惠叠加专项 ×1
+  - 长度优化：派对四级详情下沉 `references/party-chain.md`、工具坑点下沉 `references/tool-notes.md`、更新记录压缩
+- **v1.1.1（2026-10-25）** Step 3.5 加固（campaign-calendar；务必用满/多券试算/凑门槛提示）；Step 4 叠加规则硬性化；时段菜单以 query-meals 实际返回为准
+- **v1.1.0（2026-10-25）** 新增 Step 3.5 查可叠加优惠与 Step 4 叠加规则；Schema 新增 saved 字段；修复早餐无多人餐分类、随单购卡价陷阱两坑
+- **v1.0.0（2026-10-24）** 初版：选店、三档方案、官方核价、派对四级查询
